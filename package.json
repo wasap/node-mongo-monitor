@@ -1,0 +1,14 @@
+{
+  "name": "Mongo_Monitor",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">= 0.6.0",
+    "npm": ">= 1.0.0"
+  },
+  "dependencies": {
+    "aws-sdk":"2.6.8",
+    "mongoose":"4.6.3",
+    "request":"2.47.0",
+    "underscore":"1.8.3"
+  }
+}
