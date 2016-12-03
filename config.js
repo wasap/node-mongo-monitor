@@ -5,9 +5,10 @@ var _ = require('underscore');
 GLOBAL.Config = {
     Namespace: process.env.Namespace || 'onereach-customdata-dev',
     Url:{
-        Admin: process.env.ADMIN_URL || 'mongodb://localhost:27017/admin',
-        Dev: process.env.DEV_URL || 'mongodb://localhost:27017/DEV',
-        Qa: process.env.QA_URL || 'mongodb://localhost:27017/QA'
+        Admin: process.env.AdminUrl || 'mongodb://localhost:27017/admin',
+        Dev: process.env.DevUrl || 'mongodb://localhost:27017/DEV',
+        Qa: process.env.QaUrl || 'mongodb://localhost:27017/QA',
+        Prod: process.env.ProdUrl || 'mongodb://localhost:27017/PROD'
     },
     Stats:{
         objects:{Metric:'Objects',Name:'',Unit:'Count'},
@@ -21,7 +22,8 @@ GLOBAL.Config = {
     StatsInclude:{
         Admin: process.env.AdminStats || 'dataSize,storageSize,indexSize,fileSize',
         Dev: process.env.DevStats || 'dataSize,storageSize,indexSize,fileSize',
-        Qa: process.env.QaStats || 'dataSize,storageSize,indexSize,fileSize'
+        Qa: process.env.QaStats || 'dataSize,storageSize,indexSize,fileSize',
+        Prod: process.env.ProdStats || 'dataSize,storageSize,indexSize,fileSize'
     },
     StatsRate: process.env.StatsRate ? Number(process.env.StatsRate) : 300000,
     StatsPush: process.env.StatsPush ? Number(process.env.StatsPush) : 1,
@@ -34,11 +36,13 @@ GLOBAL.Config = {
     },
     QueryStatsInclude:{
         Dev: process.env.DevQueryStats || 'millis',
-        Qa: process.env.QaQueryStats || 'millis'
+        Qa: process.env.QaQueryStats || 'millis',
+        Prod: process.env.ProdQueryStats || 'millis'
     },
     QueryStatsNsIgnore:{
-        Dev: process.env.QueryStatsNsIgnore || ['DEV.system.profile','DEV.configurations'],
-        Qa: process.env.QueryStatsNsIgnore || ['QA.system.profile','QA.configurations']
+        Dev: process.env.QueryStatsDevIgnore || ['DEV.system.profile','DEV.configurations'],
+        Qa: process.env.QueryStatsQaIgnore || ['QA.system.profile','QA.configurations'],
+        Prod: process.env.QueryStatsProdIgnore || ['PROD.system.profile','PROD.configurations']
     },
     ServerStats:{
         'backgroundFlushing.average_ms':{Metric:'BackgroundFlushTime',Unit:'Milliseconds'},

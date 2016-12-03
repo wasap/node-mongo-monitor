@@ -301,7 +301,7 @@ var StartPolling = function(D){
 }
 
 var Data = {Db:{}}
-var Connections = _.map(_.keys(GLOBAL.Config.Url), function(k){ return Connect(Data, k); });
+var Connections = _.compact(_.map(_.keys(GLOBAL.Config.Url), function(k){ return k && k != 'NONE' ? Connect(Data, k) : null }));
 Promise.all(Connections).then(DbStatsAll).then(QueryStatsAll).then(RsStatus).then(ServerStatus).then(StartPolling).catch(function(e){
     console.error(e);
     if (e.stack) console.error(e.stack);
