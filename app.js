@@ -76,7 +76,7 @@ var Connect = function(D, DbName){
         M.set('debug', true);
 
         //var DbName = _.find(_.keys(GLOBAL.Config.Url), function(k){ return D.Db && D.Db[k] ? false : true});
-        if (!DbName) return Done(D);
+        if (!DbName || DbName == 'NONE') return Done(D);
         var Murl = GLOBAL.Config.Url[DbName];
         var LogMurl = Murl.indexOf('@') > -1 ? Murl.split('@')[1] : Murl;
         var ConnectionParams = {replset: { auto_reconnect:true, poolSize: 2, reconnectTries: 1000, socketOptions:{keepAlive:120} } }
@@ -101,7 +101,7 @@ var Connect = function(D, DbName){
             console.log('... ' + DbName + ' Timeout',e);
         });
         Db.on('disconnected', function(e){
-            console.log('... ' + DbName + ' disconnected... '+(GLOBAL.Mongo.Connecting ? 'Already restarting' : ''),e2);
+            console.log('... ' + DbName + ' disconnected... '+ LogMurl,e);
         });
         Db.once('open', function () {
             console.log('... ' + DbName + ' Open and Connected on '+LogMurl);
@@ -301,7 +301,7 @@ var StartPolling = function(D){
 }
 
 var Data = {Db:{}}
-var Connections = _.compact(_.map(_.keys(GLOBAL.Config.Url), function(k){ return k && k != 'NONE' ? Connect(Data, k) : null }));
+var Connections = _.compact(_.map(_.keys(GLOBAL.Config.Url), function(k){ return k && k !== 'NONE' ? Connect(Data, k) : null }));
 Promise.all(Connections).then(DbStatsAll).then(QueryStatsAll).then(RsStatus).then(ServerStatus).then(StartPolling).catch(function(e){
     console.error(e);
     if (e.stack) console.error(e.stack);
