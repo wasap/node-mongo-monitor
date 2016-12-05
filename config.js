@@ -10,7 +10,7 @@ GLOBAL.Config = {
         Qa: process.env.QaUrl || 'mongodb://localhost:27017/QA',
         Prod: process.env.ProdUrl || 'mongodb://localhost:27017/PROD'
     },
-    DiskPath: process.env.DiskPath || '/data',
+    DiskPath: process.env.DiskPath || '/data,/',
     DiskUsageStatsRate: process.env.DiskUsageStatsRate || 60000,
     Stats:{
         objects:{Metric:'Objects',Name:'',Unit:'Count'},

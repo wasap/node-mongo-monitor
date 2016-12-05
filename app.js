@@ -117,19 +117,25 @@ var Connect = function(D, DbName){
 var DiskUsageStats = function(D){
     return new Promise(function(Done, Fail){
         if (!GLOBAL.Config.DiskPath || GLOBAL.Config.DiskPath == 'NONE') return Done(D);
-        disk.check(GLOBAL.Config.DiskPath, function(Err, Info) {
-            if (Err) { console.error(new Date()+' DiskUsageStats Error:',Err); return Done(D); }
-            var Now = new Date();
-            QueuedMetrics.DiskUsageStats = QueuedMetrics.DiskUsageStats.concat([
-                {MetricName: 'DiskUsageAvailable', Timestamp:Now, Unit:'Bytes', Value:Info.available},
-                {MetricName: 'DiskUsageFree', Timestamp:Now, Unit:'Bytes', Value:Info.free},
-                {MetricName: 'DiskUsageTotal', Timestamp:Now, Unit:'Bytes', Value:Info.total},
-                {MetricName: 'DiskUsagePercent', Timestamp:Now, Unit:'Percent', Value:1 - (Info.free / Info.total)}
-            ]);
-            console.log(Now + ' complete DiskUsageStats: %o available, %o free, %o total, %o', Info.available, Info.free, Info.total, 1 - (Info.free / Info.total));
+        var Paths = GLOBAL.Config.DiskPath.split(',');
+        Each(Paths, function(Path, i, Next){
+            disk.check(Path, function(Err, Info) {
+                if (Err) { console.error(new Date()+' ' + Path +' DiskUsageStats Error:',Err); return Next(i); }
+                var Now = new Date();
+                QueuedMetrics.DiskUsageStats = QueuedMetrics.DiskUsageStats.concat([
+                    {MetricName: 'DiskUsageAvailable', Dimensions:[{Name:'DiskPath', Value:Path}], Timestamp:Now, Unit:'Bytes', Value:Info.available},
+                    {MetricName: 'DiskUsageFree', Dimensions:[{Name:'DiskPath', Value:Path}], Timestamp:Now, Unit:'Bytes', Value:Info.free},
+                    {MetricName: 'DiskUsageTotal', Dimensions:[{Name:'DiskPath', Value:Path}], Timestamp:Now, Unit:'Bytes', Value:Info.total},
+                    {MetricName: 'DiskUsagePercent', Dimensions:[{Name:'DiskPath', Value:Path}], Timestamp:Now, Unit:'Percent', Value:1 - (Info.free / Info.total)}
+                ]);
+                console.log(Now+' ' + Path + ' complete DiskUsageStats: '+Info.available+' available, '+Info.free+' free, '+Info.total+' total = ', 1 - (Info.free / Info.total));
+                Next(i);
+            });
+        }, function(){
             PutMetrics('DiskUsageStats');
             Done(D);
-        });
+        }, this, true);
+
     });
 }
 
