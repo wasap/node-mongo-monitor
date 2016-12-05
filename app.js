@@ -7,6 +7,7 @@ var _ = require('underscore');
 var Mongoose = require('mongoose').Mongoose;
 require('./config');
 var aws = require('aws-sdk');
+var disk = require('diskusage');
 var CW = new aws.CloudWatch(GLOBAL.Config.AwsCreds);
 var GetValue = require('./Q').GetValueFromObjectString;
 var Each = require('./Q').each;
@@ -28,6 +29,7 @@ var QueuedMetrics = {
     ServerStats:[],
     ReplStats:[],
     QueryStats:[],
+    DiskUsageStats:[],
     Count:{
         Stats:0,
         ServerStats:0,
@@ -107,6 +109,25 @@ var Connect = function(D, DbName){
             console.log('... ' + DbName + ' Open and Connected on '+LogMurl);
             D.Db[DbName] = Db;
             D.Db[DbName].DbName = DbName;
+            Done(D);
+        });
+    });
+}
+
+var DiskUsageStats = function(D){
+    return new Promise(function(Done, Fail){
+        if (!GLOBAL.Config.DiskPath || GLOBAL.Config.DiskPath == 'NONE') return Done(D);
+        disk.check(GLOBAL.Config.DiskPath, function(Err, Info) {
+            if (Err) { console.error(new Date()+' DiskUsageStats Error:',Err); return Done(D); }
+            var Now = new Date();
+            QueuedMetrics.DiskUsageStats = QueuedMetrics.DiskUsageStats.concat([
+                {MetricName: 'DiskUsageAvailable', Timestamp:Now, Unit:'Bytes', Value:Info.available},
+                {MetricName: 'DiskUsageFree', Timestamp:Now, Unit:'Bytes', Value:Info.free},
+                {MetricName: 'DiskUsageTotal', Timestamp:Now, Unit:'Bytes', Value:Info.total},
+                {MetricName: 'DiskUsagePercent', Timestamp:Now, Unit:'Percent', Value:1 - (Info.free / Info.total)}
+            ]);
+            console.log(Now + ' complete DiskUsageStats: %o available, %o free, %o total, %o', Info.available, Info.free, Info.total, 1 - (Info.free / Info.total));
+            PutMetrics('DiskUsageStats');
             Done(D);
         });
     });
@@ -297,12 +318,16 @@ var StartPolling = function(D){
         setInterval(function(){
             QueryStatsAll({}).then().catch(function(e){ console.error('QueryStats Error',e) });
         },GLOBAL.Config.QueryStatsRate);
+
+        setInterval(function(){
+            DiskUsageStats({}).then().catch(function(e){ console.error('DiskUsageStats Error',e) });
+        },GLOBAL.Config.DiskUsageStatsStatsRate);
     })
 }
 
 var Data = {Db:{}}
 var Connections = _.compact(_.map(_.keys(GLOBAL.Config.Url), function(k){ return k && k !== 'NONE' ? Connect(Data, k) : null }));
-Promise.all(Connections).then(DbStatsAll).then(QueryStatsAll).then(RsStatus).then(ServerStatus).then(StartPolling).catch(function(e){
+Promise.all(Connections).then(DbStatsAll).then(QueryStatsAll).then(RsStatus).then(ServerStatus).then(DiskUsageStats).then(StartPolling).catch(function(e){
     console.error(e);
     if (e.stack) console.error(e.stack);
 })
