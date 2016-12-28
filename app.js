@@ -327,7 +327,7 @@ var StartPolling = function(D){
 
         setInterval(function(){
             DiskUsageStats({}).then().catch(function(e){ console.error('DiskUsageStats Error',e) });
-        },GLOBAL.Config.DiskUsageStatsStatsRate);
+        },GLOBAL.Config.DiskUsageStatsRate);
     })
 }
 
