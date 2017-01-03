@@ -10,6 +10,10 @@ GLOBAL.Config = {
         Qa: process.env.QaUrl || 'mongodb://localhost:27017/QA',
         Prod: process.env.ProdUrl || 'mongodb://localhost:27017/PROD'
     },
+    CommandCreds:{
+        UserName: process.env.CommandCredsUser || 'siteAdmin',
+        Pwd: process.env.CommandCredsPwd || 'OneR3achAdm1n'
+    },
     DiskPath: process.env.DiskPath || '/data,/',
     DiskUsageStatsRate: process.env.DiskUsageStatsRate || 60000,
     Stats:{
@@ -29,7 +33,7 @@ GLOBAL.Config = {
     },
     StatsRate: process.env.StatsRate ? Number(process.env.StatsRate) : 300000,
     StatsPush: process.env.StatsPush ? Number(process.env.StatsPush) : 1,
-    ReplStatsRate: process.env.ReplStatsRate ? Number(process.env.ReplStatsRate) : 300000,
+    ReplStatsRate: process.env.ReplStatsRate ? Number(process.env.ReplStatsRate) : 60000,
     ReplStatsPush: process.env.ReplStatsPush ? Number(process.env.ReplStatsPush) : 1,
     QueryStatsRate: process.env.QueryStatsRate ? Number(process.env.QueryStatsRate) : 60000,
     QueryStatsPush: process.env.QueryStatsPush ? Number(process.env.QueryStatsPush) : 1,

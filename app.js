@@ -11,6 +11,8 @@ var disk = require('diskusage');
 var CW = new aws.CloudWatch(GLOBAL.Config.AwsCreds);
 var GetValue = require('./Q').GetValueFromObjectString;
 var Each = require('./Q').each;
+var sys = require('sys')
+var exec = require('child_process').exec;
 
 process.on('uncaughtException', function (error) {
     console.error('uncaughtException : ', error.stack);
@@ -80,6 +82,7 @@ var Connect = function(D, DbName){
         //var DbName = _.find(_.keys(GLOBAL.Config.Url), function(k){ return D.Db && D.Db[k] ? false : true});
         if (!DbName || DbName == 'NONE') return Done(D);
         var Murl = GLOBAL.Config.Url[DbName];
+        if (Murl == 'NONE') return Done(D);
         var LogMurl = Murl.indexOf('@') > -1 ? Murl.split('@')[1] : Murl;
         var ConnectionParams = {replset: { auto_reconnect:true, poolSize: 2, reconnectTries: 1000, socketOptions:{keepAlive:120} } }
         ConnectionParams.server = ConnectionParams.replset;
@@ -142,7 +145,7 @@ var DiskUsageStats = function(D){
 var QueryStatsAll = function(D){
     return new Promise(function(Done, Fail){
         QueuedMetrics.Count.QueryStats++;
-        var Stats = _.compact(_.map(_.keys(GLOBAL.Config.Url), function(k){ return k == 'Admin' || GLOBAL.Config.QueryStatsInclude[k] == 'NONE' ? null : QueryStats(Data.Db[k]); }));
+        var Stats = _.compact(_.map(_.keys(GLOBAL.Config.Url), function(k){ return k == 'Admin' || GLOBAL.Config.Url[k] == 'NONE' || GLOBAL.Config.QueryStatsInclude[k] == 'NONE' ? null : QueryStats(Data.Db[k]); }));
         Promise.all(Stats).then(function(){
             if (QueuedMetrics.Count.QueryStats >= GLOBAL.Config.QueryStatsPush) {
                 PutMetrics('QueryStats');
@@ -203,7 +206,7 @@ var DbStats = function(D){
 var DbStatsAll = function(D){
     return new Promise(function(Done, Fail){
         QueuedMetrics.Count.Stats++;
-        var Stats = _.compact(_.map(_.keys(GLOBAL.Config.Url), function(k){ return GLOBAL.Config.StatsInclude[k] == 'NONE' ? null : DbStats(Data.Db[k]); }));
+        var Stats = _.compact(_.map(_.keys(GLOBAL.Config.Url), function(k){ return GLOBAL.Config.Url[k] == 'NONE' || GLOBAL.Config.StatsInclude[k] == 'NONE' ? null : DbStats(Data.Db[k]); }));
         Promise.all(Stats).then(function(){
             if (QueuedMetrics.Count.Stats >= GLOBAL.Config.StatsPush) {
                 PutMetrics('Stats');
@@ -228,9 +231,28 @@ var PushStats = function(D){
     });
 }
 
+var ReplicaTypes = ['PRIMARY','SECONDARY','ARBITER'];
+
 var RsStatus = function(D){
     return new Promise(function(Done, Fail){
         console.log(new Date()+' Replica Set...');
+        var Now = new Date();
+        if (GLOBAL.Config.CommandCreds.UserName !== 'NONE'){
+            exec('mongo admin -u ' + GLOBAL.Config.CommandCreds.UserName + ' -p '+GLOBAL.Config.CommandCreds.Pwd+' --eval "rs.printSlaveReplicationInfo()"', function (error, stdout, stderr) {
+                if (error !== null) {
+                    console.error(' >> printSlaveReplicationInfo exec error: ' + error);
+                }
+                if (stdout){
+                    var S = stdout.split('(UTC)\n\t')[1];
+                    var Seconds = Number(S.split(' secs')[0]);
+                    console.log(' >> printSlaveReplicationInfo: '+Seconds, S);
+                    QueuedMetrics.ReplStats.push({MetricName: 'ReplicationLag', Timestamp:Now, Unit:'Milliseconds', Value: Seconds * 1000});
+                } else if (stderr) {
+                    console.error(' >> printSlaveReplicationInfo stderr: ' + stderr);
+                }
+            });
+        }
+
         Data.Db.Admin.db.command({"replSetGetStatus":1 },function(err,result) {
             if (err) {
                 console.error(new Date()+' Replica Set Error:',err, err.stack);
@@ -242,12 +264,31 @@ var RsStatus = function(D){
             }
             console.log(new Date()+' Replica Set:',result);
             if (result && result.members && result.members.length){
-                var Now = new Date();
                 QueuedMetrics.Count.ReplStats++;
 
+                var RS = [];
                 _.each(result.members,function(V,K){
-                    QueuedMetrics.ReplStats.push({MetricName: 'ReplicaInstanceHealth', Dimensions:[{Name:'ReplicaState', Value: V.stateStr}], Timestamp:Now, Unit:'Count', Value: V.health});
+                    if (_.indexOf(ReplicaTypes, V.stateStr) > -1) {
+                        QueuedMetrics.ReplStats.push({MetricName: 'ReplicaInstanceHealth', Dimensions:[{Name:'ReplicaState', Value: V.stateStr}], Timestamp:Now, Unit:'Count', Value: V.health});
+                        RS.push(V.stateStr);
+                    }
                 },this);
+
+                if (RS.length < ReplicaTypes.length) {
+                    _.each(ReplicaTypes, function(R){
+                        if (_.indexOf(RS,R) == -1) QueuedMetrics.ReplStats.push({MetricName: 'ReplicaInstanceHealth', Dimensions:[{Name:'ReplicaState', Value: R}], Timestamp:Now, Unit:'Count', Value: 0});
+                    })
+                }
+
+                var Primary = _.find(result.members, function(M){ return M && M.stateStr == 'PRIMARY'});
+                if (Primary) {
+                    _.each(result.members,function(V,K){
+                        if (V.stateStr == 'SECONDARY' && V.optimeDate) {
+                            console.log('Check SecondaryOptimeLag', V.optimeDate, Primary.optimeDate,new Date(V.optimeDate).getTime() - new Date(Primary.optimeDate).getTime());
+                            QueuedMetrics.ReplStats.push({MetricName: 'SecondaryOptimeLag', Dimensions:[{Name:'ReplicaState', Value: V.stateStr}], Timestamp:Now, Unit:'Milliseconds', Value: new Date(V.optimeDate).getTime() - new Date(Primary.optimeDate).getTime()});
+                        }
+                    },this);
+                }
 
                 if (QueuedMetrics.Count.ReplStats >= GLOBAL.Config.ReplStatsPush) {
                     PutMetrics('ReplStats');
