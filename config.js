@@ -87,6 +87,7 @@ GLOBAL.Config = {
     }
 }
 if (process.env.Region) GLOBAL.Config.AwsCreds.region = process.env.Region;
+if ('abcdefg'.indexOf(GLOBAL.Config.AwsCreds.region.substr(GLOBAL.Config.AwsCreds.region.length-1)) > -1) GLOBAL.Config.AwsCreds.region = GLOBAL.Config.AwsCreds.region.substring(0,GLOBAL.Config.AwsCreds.region.length-1);
 if (process.env.AccessKeyId) GLOBAL.Config.AwsCreds.accessKeyId = process.env.AccessKeyId;
 if (process.env.SecretAccessKey) GLOBAL.Config.AwsCreds.secretAccessKey = process.env.SecretAccessKey;
 if (GLOBAL.Config.ServerStatsInclude == 'ALL') GLOBAL.Config.ServerStatsInclude = _.keys(GLOBAL.Config.ServerStats).join(',')
