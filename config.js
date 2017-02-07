@@ -86,6 +86,7 @@ GLOBAL.Config = {
         maxRetries: 100
     }
 }
+if (process.env.Region) GLOBAL.Config.AwsCreds.region = process.env.Region;
 if (process.env.AccessKeyId) GLOBAL.Config.AwsCreds.accessKeyId = process.env.AccessKeyId;
 if (process.env.SecretAccessKey) GLOBAL.Config.AwsCreds.secretAccessKey = process.env.SecretAccessKey;
 if (GLOBAL.Config.ServerStatsInclude == 'ALL') GLOBAL.Config.ServerStatsInclude = _.keys(GLOBAL.Config.ServerStats).join(',')
