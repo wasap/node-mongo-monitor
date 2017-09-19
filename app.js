@@ -129,7 +129,7 @@ var DiskUsageStats = function(D){
                     {MetricName: 'DiskUsageAvailable', Dimensions:[{Name:'DiskPath', Value:Path}], Timestamp:Now, Unit:'Bytes', Value:Info.available},
                     {MetricName: 'DiskUsageFree', Dimensions:[{Name:'DiskPath', Value:Path}], Timestamp:Now, Unit:'Bytes', Value:Info.free},
                     {MetricName: 'DiskUsageTotal', Dimensions:[{Name:'DiskPath', Value:Path}], Timestamp:Now, Unit:'Bytes', Value:Info.total},
-                    {MetricName: 'DiskUsagePercent', Dimensions:[{Name:'DiskPath', Value:Path}], Timestamp:Now, Unit:'Percent', Value:1 - (Info.free / Info.total)}
+                    {MetricName: 'DiskUsagePercent', Dimensions:[{Name:'DiskPath', Value:Path}], Timestamp:Now, Unit:'Percent', Value:(1 - (Info.free / Info.total))*100}
                 ]);
                 console.log(Now+' ' + Path + ' complete DiskUsageStats: '+Info.available+' available, '+Info.free+' free, '+Info.total+' total = ', 1 - (Info.free / Info.total));
                 Next(i);
