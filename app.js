@@ -8,7 +8,7 @@ var Mongoose = require('mongoose').Mongoose;
 require('./config');
 var aws = require('aws-sdk');
 var disk = require('diskusage');
-var CW = new aws.CloudWatch(GLOBAL.Config.AwsCreds);
+var CW = new aws.CloudWatch();
 var GetValue = require('./Q').GetValueFromObjectString;
 var Each = require('./Q').each;
 var sys = require('sys')
