@@ -6,13 +6,31 @@ console.log('\n\n*************\nStarting Mongo Monitor at '+ new Date());
 var _ = require('underscore');
 var Mongoose = require('mongoose').Mongoose;
 require('./config');
-var aws = require('aws-sdk');
 var disk = require('diskusage');
-var CW = new aws.CloudWatch();
+
 var GetValue = require('./Q').GetValueFromObjectString;
 var Each = require('./Q').each;
 var sys = require('sys')
 var exec = require('child_process').exec;
+
+var aws = require('aws-sdk');
+var fetch = require('node-fetch');
+aws.config.credentials = new aws.EC2MetadataCredentials({
+    httpOptions: { timeout: 5000 }, // 5 second timeout
+    maxRetries: 10, // retry 10 times
+    retryDelayOptions: { base: 200 } // see AWS.Config for information
+});
+var CW 
+
+function setupCW() {
+    return fetch('http://169.254.169.254/latest/dynamic/instance-identity/document').then(function (data) { return data.json() })
+    .then(function(ec2){
+        var params = {
+            region: ec2.region,
+        }
+        CW = new aws.CloudWatch(params);
+    })
+}
 
 process.on('uncaughtException', function (error) {
     console.error('uncaughtException : ', error.stack);
@@ -374,7 +392,7 @@ var StartPolling = function(D){
 
 var Data = {Db:{}}
 var Connections = _.compact(_.map(_.keys(GLOBAL.Config.Url), function(k){ return k && k !== 'NONE' ? Connect(Data, k) : null }));
-Promise.all(Connections).then(DbStatsAll).then(QueryStatsAll).then(RsStatus).then(ServerStatus).then(DiskUsageStats).then(StartPolling).catch(function(e){
+Promise.all(Connections).then(setupCW).then(DbStatsAll).then(QueryStatsAll).then(RsStatus).then(ServerStatus).then(DiskUsageStats).then(StartPolling).catch(function(e){
     console.error(e);
     if (e.stack) console.error(e.stack);
 })

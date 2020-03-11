@@ -6,10 +6,11 @@
     "npm": ">= 1.0.0"
   },
   "dependencies": {
-    "aws-sdk":"2.6.8",
-    "diskusage":"0.1.5",
-    "mongoose":"4.6.3",
-    "request":"2.47.0",
-    "underscore":"1.8.3"
+    "aws-sdk": "2.6.8",
+    "diskusage": "0.1.5",
+    "mongoose": "4.6.3",
+    "node-fetch": "^2.6.0",
+    "request": "2.47.0",
+    "underscore": "1.8.3"
   }
 }
