@@ -2,17 +2,20 @@
  * Created by Jeremy on 10/25/2016.
  */
 var _ = require('underscore');
+var exp = /\/\/(.+?)\:(.+?)\@/.exec(process.env.AdminUrl);
+var CommandCredsUser = exp && exp[1]
+var CommandCredsPwd = exp && exp[2]
 GLOBAL.Config = {
     Namespace: process.env.Namespace || 'onereach-customdata-dev',
     Url:{
-        Admin: process.env.AdminUrl || 'mongodb://localhost:27017/admin',
-        Dev: process.env.DevUrl || 'mongodb://localhost:27017/DEV',
-        Qa: process.env.QaUrl || 'mongodb://localhost:27017/QA',
-        Prod: process.env.ProdUrl || 'mongodb://localhost:27017/PROD'
+        Admin: process.env.AdminUrl + '?replicaSet=' + process.env.Namespace || 'mongodb://localhost:27017/admin',
+        Dev: process.env.DevUrl + '?replicaSet=' + process.env.Namespace || 'mongodb://localhost:27017/DEV',
+        Qa: process.env.QaUrl + '?replicaSet=' + process.env.Namespace || 'mongodb://localhost:27017/QA',
+        Prod: process.env.ProdUrl + '?replicaSet=' + process.env.Namespace || 'mongodb://localhost:27017/PROD'
     },
     CommandCreds:{
-        UserName: process.env.CommandCredsUser || 'siteAdmin',
-        Pwd: process.env.CommandCredsPwd || 'OneR3achAdm1n'
+        UserName: process.env.CommandCredsUser || CommandCredsUser || 'siteAdmin',
+        Pwd: process.env.CommandCredsPwd || CommandCredsPwd || 'OneR3achAdm1n'
     },
     DiskPath: process.env.DiskPath || '/data,/',
     DiskUsageStatsRate: process.env.DiskUsageStatsRate || 60000,
