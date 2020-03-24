@@ -8,10 +8,10 @@ var CommandCredsPwd = exp && exp[2]
 GLOBAL.Config = {
     Namespace: process.env.Namespace || 'onereach-customdata-dev',
     Url:{
-        Admin: process.env.AdminUrl + '?replicaSet=' + process.env.Namespace || 'mongodb://localhost:27017/admin',
-        Dev: process.env.DevUrl + '?replicaSet=' + process.env.Namespace || 'mongodb://localhost:27017/DEV',
-        Qa: process.env.QaUrl + '?replicaSet=' + process.env.Namespace || 'mongodb://localhost:27017/QA',
-        Prod: process.env.ProdUrl + '?replicaSet=' + process.env.Namespace || 'mongodb://localhost:27017/PROD'
+        Admin: process.env.AdminUrl || 'mongodb://localhost:27017/admin',
+        Dev: process.env.DevUrl || 'mongodb://localhost:27017/DEV',
+        Qa: process.env.QaUrl || 'mongodb://localhost:27017/QA',
+        Prod: process.env.ProdUrl || 'mongodb://localhost:27017/PROD'
     },
     CommandCreds:{
         UserName: process.env.CommandCredsUser || CommandCredsUser || 'siteAdmin',
@@ -87,6 +87,11 @@ GLOBAL.Config = {
         secretAccessKey: 'LRdJ2Nrg6Mkd0kWB8PY+9mKu5SPGeggxHPN3Nycj',
         sslEnabled: true,
         maxRetries: 100
+    }
+}
+for (var key in GLOBAL.Config.Url){
+    if(GLOBAL.Config.Url[key] !== 'NONE'){
+        GLOBAL.Config.Url[key] = GLOBAL.Config.Url[key] + '?replicaSet=' + process.env.Namespace
     }
 }
 if (process.env.Region) GLOBAL.Config.AwsCreds.region = process.env.Region;
